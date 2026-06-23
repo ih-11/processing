@@ -1,0 +1,10 @@
+name: nfcore-riboseq
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - nextflow
+  - nf-core
+  - apptainer
+  - tree
