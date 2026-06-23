@@ -1,0 +1,16 @@
+
+ N E X T F L O W   ~  version 26.04.4
+
+
+Error modules.config:113:1: If statements cannot be mixed with config statements
+│ 111 | }
+│ 112 | 
+│ 113 | if (!params.skip_bbsplit && params.bbsplit_fasta_list) {
+│     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+│ 114 |     process {
+╰ 115 |         withName: '.*:PREPARE_GENOME:BBMAP_BBSPLIT' {
+
+
+ERROR ~ Config parsing failed
+
+ -- Check '.nextflow.log' file for details
