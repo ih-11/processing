@@ -3,3 +3,8 @@ work/
 .nextflow/
 *.log
 __pycache__/
+null/
+riboseq/null/
+riboseq/.nextflow/
+riboseq/.nextflow.log*
+.nextflow.log*
