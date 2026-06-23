@@ -1,0 +1,3 @@
+sample,fastq_1,fastq_2,strandedness,type
+SRR25120039_RIBO_1pct,data/SRR25120039.1pct.fastq.gz,,auto,riboseq
+SRR25120043_RNA_1pct,data/SRR25120043.1pct.fastq.gz,,auto,rnaseq
