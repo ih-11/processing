@@ -1,4 +1,4 @@
-name: nfcore-riboseq
+name: nf-ribo
 channels:
   - conda-forge
   - bioconda
@@ -7,4 +7,5 @@ dependencies:
   - nextflow=25.04.8
   - nf-core
   - apptainer
+  - gffread
   - tree
