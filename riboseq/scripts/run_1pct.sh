@@ -7,6 +7,7 @@ nextflow run nf-core/riboseq \
   --input samplesheets/samplesheet_1pct.csv \
   --outdir results/1pct \
   --fasta refs/at.fa.gz \
-  --gff refs/at.gff.gz \
+  --gtf refs/at.gtf.gz \
+  --save_reference \
   -work-dir work/1pct \
   "$@"
