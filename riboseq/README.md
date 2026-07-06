@@ -143,13 +143,13 @@ Only the sequencing data and samplesheet change between experiments.
 When processing a species (or genome assembly) for the first time:
 
 1. Download the reference genome (FASTA).
-2. Download the genome annotation (GTF or GFF3).
+2. Download the corresponding genome annotation (GTF or GFF3).
 3. Verify that the annotation is compatible with downstream tools.
-4. Run a small validation dataset (for example 1K reads).
-5. Generate the required reference resources.
-6. Store those resources in a permanent location for future reuse.
+4. Run a small validation dataset (for example, 1K reads).
+5. Generate the required reference resources (e.g. STAR index, SortMeRNA index, transcriptome FASTA, and RSEM reference).
+6. Store the generated reference resources in a permanent location suitable for your computing environment.
 
-Future analyses should reuse the existing references rather than rebuilding them.
+Once generated, these reference resources can be reused for every dataset originating from the same genome assembly. Only the sequencing reads and project-specific configuration need to change between analyses.
 
 If a different genome assembly is used (for example TAIR10 vs TAIR11, or GRCh37 vs GRCh38), a separate set of reference resources should be generated.
 
@@ -205,17 +205,21 @@ Downstream analyses
 
 # Data management
 
-This repository primarily stores
+This repository contains the workflow, configuration files, and documentation required to reproduce Ribo-seq analyses.
 
-- workflow code
-- configuration files
-- documentation
+Large sequencing datasets, generated reference resources, intermediate files, and pipeline outputs are intentionally excluded from version control.
 
-Large sequencing datasets, intermediate files, generated reference resources, and pipeline outputs are intentionally excluded from version control.
+Users are encouraged to store these resources in locations appropriate for their computing environment, for example:
 
-During workflow development, small example datasets may be stored locally for debugging.
+- local storage
+- external drives
+- laboratory shared storage
+- HPC scratch space
+- HPC project directories
 
-Production datasets are expected to reside on dedicated storage (local disks, external drives, or HPC storage), while this repository provides the workflow required to reproduce those analyses.
+The workflow does **not** require a specific directory layout. Input data, reference resources, output directories, and working directories can be placed anywhere on the system, provided the paths are correctly specified in the workflow configuration.
+
+The directories included in this repository (e.g. `data/`, `refs/`, `results/`, and `work/`) are primarily intended for workflow development, debugging, and validation. Production analyses may use completely different storage locations without modifying the workflow itself.
 
 ---
 
