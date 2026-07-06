@@ -9,8 +9,9 @@ nextflow run nf-core/riboseq \
   --input "${ROOT}/samplesheets/samplesheet_1k.csv" \
   --outdir "${ROOT}/results/1k" \
   --fasta "${ROOT}/refs/at.fa.gz" \
-  --gtf "${ROOT}/refs/at.gtf.gz" \
+  --gtf "${ROOT}/refs/at.rsem.gtf.gz" \
   --save_reference \
   --skip_fastqc \
+  --trimmer fastp \
   -work-dir "${ROOT}/work/1k" \
   "$@"
