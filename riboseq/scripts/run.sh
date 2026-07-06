@@ -12,7 +12,7 @@ nextflow run nf-core/riboseq \
   -r 1.2.0 \
   -profile apptainer \
   --input "${ROOT}/${INPUT}" \
-  --outdir "${ROOT}/${OUTDIR}" \
+  --outdir "${OUTDIR}" \
   --fasta "${REF}/at.fa" \
   --gtf "${REF}/at.rsem.gtf" \
   --transcript_fasta "${REF}/genome.transcripts.fa" \
@@ -20,5 +20,5 @@ nextflow run nf-core/riboseq \
   --sortmerna_index "${REF}/sortmerna" \
   --skip_fastqc \
   --trimmer fastp \
-  -work-dir "${ROOT}/${WORKDIR}" \
+  -work-dir "${WORKDIR}" \
   "${@:2}"
