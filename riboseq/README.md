@@ -1,21 +1,19 @@
 # riboseq
 
-Reproducible processing workflow for ribosome profiling (Ribo-seq) and RNA-seq using the **nf-core/riboseq** pipeline.
+A reusable and reproducible workflow for processing **Ribo-seq** and **RNA-seq** datasets using the **nf-core/riboseq** pipeline.
 
-This repository is designed as a reusable template for future Ribo-seq projects. The workflow separates configuration from execution, reuses pre-built reference indices, and follows a clean project structure suitable for version control.
+This repository is designed as a generic framework rather than a single-project analysis. It separates workflow execution from project-specific configuration, allowing the same pipeline to be reused across different experiments and organisms.
 
 ---
 
-# Current dataset
+# Features
 
-| Item | Value |
-|------|------|
-| Species | *Arabidopsis thaliana* |
-| BioProject | PRJNA990964 |
-| Ribo-seq | SRR25120039 |
-| RNA-seq | SRR25120043 |
-| Pipeline | nf-core/riboseq v1.2.0 |
-| Container | Apptainer |
+- Generic nf-core/riboseq launcher
+- Configuration-based execution
+- Reusable reference resources
+- Compatible with multiple species
+- Version-controlled workflow
+- Designed for local workstations and HPC environments
 
 ---
 
@@ -23,27 +21,32 @@ This repository is designed as a reusable template for future Ribo-seq projects.
 
 ```text
 riboseq/
-├── configs/            # Run configurations
-├── data/               # Input FASTQ files (git ignored)
+├── configs/            # Run-specific configurations
+├── data/               # Input FASTQ files (ignored by git)
 ├── docs/               # Documentation and notes
 ├── env/                # Conda environment
 ├── refs/
-│   ├── at.fa.gz
-│   ├── at.gff3.gz
-│   ├── at.rsem.gtf.gz
-│   └── built/          # Generated reference indices (git ignored)
-├── results/            # Pipeline outputs (git ignored)
+│   ├── genome/
+│   │   ├── at.fa.gz
+│   │   ├── at.gtf.gz
+│   │   └── ...
+│   └── built/          # Generated reference resources (ignored by git)
+├── results/            # Pipeline outputs (ignored by git)
 ├── samplesheets/
 ├── scripts/
 │   └── run.sh
-└── work/               # Nextflow working directory (git ignored)
+└── work/               # Nextflow work directory (ignored by git)
 ```
 
 ---
 
 # Design philosophy
 
-Instead of creating multiple launcher scripts,
+The workflow follows three simple principles.
+
+1. **One launcher**
+
+Instead of maintaining multiple scripts,
 
 ```
 run_1k.sh
@@ -57,7 +60,11 @@ the repository uses a single launcher
 scripts/run.sh
 ```
 
-while each execution is controlled by a configuration file.
+2. **Configuration-driven execution**
+
+Each analysis is controlled by a configuration file.
+
+Example:
 
 ```
 configs/debug.config
@@ -65,74 +72,110 @@ configs/1pct.config
 configs/full.config
 ```
 
-This makes the workflow easier to maintain and scale to additional datasets.
+Only configuration changes between analyses.
+
+3. **Reusable references**
+
+Reference resources are generated once and reused across all analyses for the same organism.
+
+This minimizes runtime while ensuring reproducibility.
 
 ---
 
-# Running the pipeline
+# Running the workflow
 
-## Debug (1K reads)
+## Debug dataset
 
 ```bash
 bash scripts/run.sh configs/debug.config
 ```
 
-## Validation (1%)
+## Validation dataset
 
 ```bash
 bash scripts/run.sh configs/1pct.config
 ```
 
-## Production (future)
+## Production dataset
 
 ```bash
 bash scripts/run.sh configs/full.config
 ```
 
-Additional Nextflow arguments can be appended directly.
+Additional Nextflow arguments can be passed directly.
 
-Example:
+Examples
 
 ```bash
-bash scripts/run.sh configs/debug.config -resume
+bash scripts/run.sh configs/full.config -resume
 ```
 
-or
-
 ```bash
-bash scripts/run.sh configs/debug.config -stub-run
+bash scripts/run.sh configs/full.config -stub-run
 ```
 
 ---
 
 # Reference preparation
 
-The reference genome and annotation are prepared only once.
+Reference preparation is performed **once per organism**.
 
-The workflow reuses pre-built
+The generated resources include
 
-- STAR index
+- STAR genome index
 - SortMeRNA index
 - transcriptome FASTA
 - RSEM reference
 
-stored under
+These resources are stored under
 
 ```
-refs/built/arabidopsis_tair10_rsemclean/
+refs/built/<species_name>/
 ```
 
-This avoids rebuilding reference indices for every analysis, substantially reducing runtime.
+For example
+
+```
+refs/built/
+├── arabidopsis_tair10/
+├── saccharomyces_r64/
+├── chlamydomonas_cc4532/
+├── rice_irgsp1/
+└── human_grch38/
+```
+
+Once generated, these references can be reused indefinitely for every dataset from the same genome assembly.
+
+Only the FASTQ files and samplesheet change between experiments.
 
 ---
 
-# Annotation preprocessing
+# Processing a new species
 
-The original Araport11-derived GTF contains several annotation entries lacking the `gene_id` attribute, primarily for small RNA annotations.
+When processing a species for the first time:
 
-These records caused downstream RSEM reference generation to fail.
+1. Download the genome FASTA.
+2. Download the genome annotation (GTF or GFF3).
+3. Ensure the annotation is compatible with RSEM.
+4. Run a small debug dataset (for example 1K reads).
+5. Generate the reference resources.
+6. Store the generated references under
 
-A cleaned annotation was generated by removing all entries without `gene_id`:
+```
+refs/built/<species_name>/
+```
+
+Future analyses for that species should reuse the existing references instead of rebuilding them.
+
+---
+
+# Annotation compatibility
+
+Some annotations may not be fully compatible with downstream tools.
+
+For example, during development the Araport11 annotation contained records without a `gene_id` attribute, causing RSEM reference generation to fail.
+
+The solution was to create a cleaned annotation by removing records lacking `gene_id`.
 
 ```bash
 zcat refs/at.gtf.gz \
@@ -140,31 +183,7 @@ zcat refs/at.gtf.gz \
 | gzip > refs/at.rsem.gtf.gz
 ```
 
-The cleaned annotation is used throughout the workflow.
-
----
-
-# Git policy
-
-The repository tracks only source code, configuration, and documentation.
-
-Tracked:
-
-- scripts
-- configs
-- samplesheets
-- documentation
-- environment specification
-
-Ignored:
-
-- FASTQ files
-- Nextflow work directory
-- pipeline outputs
-- generated reference indices
-- Apptainer images
-
-This keeps the repository lightweight while ensuring full reproducibility.
+This type of preprocessing is only required when the original annotation is incompatible with downstream software.
 
 ---
 
@@ -172,24 +191,24 @@ This keeps the repository lightweight while ensuring full reproducibility.
 
 ```
 FASTQ
-    │
-    ▼
+   │
+   ▼
 fastp
-    │
-    ▼
+   │
+   ▼
 SortMeRNA
-    │
-    ▼
+   │
+   ▼
 STAR
-    │
-    ├── genome alignment
-    └── transcriptome alignment
+   │
+   ├── Genome alignment
+   └── Transcriptome alignment
             │
             ▼
 Salmon
             │
             ▼
-Ribo-seq analyses
+Downstream analyses
     ├── RiboTish
     ├── RiboWaltz
     ├── RiboTricer
@@ -198,16 +217,40 @@ Ribo-seq analyses
 
 ---
 
-# Notes
+# Git policy
 
-Reference indices are independent of sequencing depth.
+The repository contains workflow code only.
 
-Whether processing
+Tracked
 
-- 1K reads,
-- 1% of the dataset, or
-- the complete sequencing run,
+- scripts
+- configs
+- documentation
+- samplesheets
+- environment specification
 
-the same reference indices can be reused without affecting the analytical results.
+Ignored
 
-Only the input FASTQ files change.
+- FASTQ files
+- pipeline outputs
+- Nextflow work directory
+- generated reference resources
+- Apptainer images
+
+This keeps the repository lightweight while maintaining complete reproducibility.
+
+---
+
+# Current example
+
+The current implementation has been validated using
+
+| Item | Value |
+|------|------|
+| Species | *Arabidopsis thaliana* |
+| BioProject | PRJNA990964 |
+| Ribo-seq | SRR25120039 |
+| RNA-seq | SRR25120043 |
+| Pipeline | nf-core/riboseq v1.2.0 |
+
+This dataset serves as an example implementation. The workflow itself is intended to be reusable for any organism with appropriate reference resources.
