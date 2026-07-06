@@ -20,3 +20,4 @@ data/debug/
 # Large sequencing files
 data/*.fastq.gz
 data/*.fq.gz
+mnt/
