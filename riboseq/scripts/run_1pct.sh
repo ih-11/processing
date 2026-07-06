@@ -11,5 +11,7 @@ nextflow run nf-core/riboseq \
   --fasta "${ROOT}/refs/at.fa.gz" \
   --gtf "${ROOT}/refs/at.gtf.gz" \
   --save_reference \
+  --skip_fastqc \
+  --extra_trimgalore_args "--no_report_file" \
   -work-dir "${ROOT}/work/1pct" \
   "$@"
