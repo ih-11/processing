@@ -1,0 +1,22 @@
+# Nextflow runtime
+work/
+.nextflow*
+.nextflow.log*
+
+# Pipeline outputs
+results/
+
+# Large generated references / indexes
+refs/built/
+
+# Local containers
+singularity/
+*.img
+*.sif
+
+# Debug FASTQ subsets
+data/debug/
+
+# Large sequencing files
+data/*.fastq.gz
+data/*.fq.gz
