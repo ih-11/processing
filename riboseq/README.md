@@ -2,18 +2,18 @@
 
 A reusable and reproducible workflow for processing **Ribo-seq** and **RNA-seq** datasets using the **nf-core/riboseq** pipeline.
 
-This repository is designed as a generic framework rather than a single-project analysis. It separates workflow execution from project-specific configuration, allowing the same pipeline to be reused across different experiments and organisms.
+This repository is intended to serve as a reusable framework rather than a single-project analysis. It separates workflow execution from project-specific configuration so that the same workflow can be applied to different experiments, organisms, and computing environments.
 
 ---
 
 # Features
 
 - Generic nf-core/riboseq launcher
-- Configuration-based execution
+- Configuration-driven execution
 - Reusable reference resources
 - Compatible with multiple species
 - Version-controlled workflow
-- Designed for local workstations and HPC environments
+- Suitable for local workstations and HPC environments
 
 ---
 
@@ -22,20 +22,15 @@ This repository is designed as a generic framework rather than a single-project 
 ```text
 riboseq/
 ├── configs/            # Run-specific configurations
-├── data/               # Input FASTQ files (ignored by git)
+├── data/               # Input FASTQ files (development/debug)
 ├── docs/               # Documentation and notes
 ├── env/                # Conda environment
-├── refs/
-│   ├── genome/
-│   │   ├── at.fa.gz
-│   │   ├── at.gtf.gz
-│   │   └── ...
-│   └── built/          # Generated reference resources (ignored by git)
+├── refs/               # Reference genomes and annotations
 ├── results/            # Pipeline outputs (ignored by git)
-├── samplesheets/
+├── samplesheets/       # nf-core input samplesheets
 ├── scripts/
-│   └── run.sh
-└── work/               # Nextflow work directory (ignored by git)
+│   └── run.sh          # Generic launcher
+└── work/               # Nextflow working directory (ignored by git)
 ```
 
 ---
@@ -44,9 +39,9 @@ riboseq/
 
 The workflow follows three simple principles.
 
-1. **One launcher**
+## 1. One launcher
 
-Instead of maintaining multiple scripts,
+Instead of maintaining multiple execution scripts,
 
 ```
 run_1k.sh
@@ -60,11 +55,15 @@ the repository uses a single launcher
 scripts/run.sh
 ```
 
-2. **Configuration-driven execution**
+The workflow itself never changes.
+
+---
+
+## 2. Configuration-driven execution
 
 Each analysis is controlled by a configuration file.
 
-Example:
+Examples
 
 ```
 configs/debug.config
@@ -72,13 +71,15 @@ configs/1pct.config
 configs/full.config
 ```
 
-Only configuration changes between analyses.
+Changing datasets should only require changing the configuration.
 
-3. **Reusable references**
+---
 
-Reference resources are generated once and reused across all analyses for the same organism.
+## 3. Reusable reference resources
 
-This minimizes runtime while ensuring reproducibility.
+Reference resources are generated once for each genome assembly and reused for all subsequent analyses.
+
+This minimizes runtime while maintaining identical analytical results.
 
 ---
 
@@ -102,7 +103,7 @@ bash scripts/run.sh configs/1pct.config
 bash scripts/run.sh configs/full.config
 ```
 
-Additional Nextflow arguments can be passed directly.
+Additional Nextflow options may be appended.
 
 Examples
 
@@ -118,64 +119,49 @@ bash scripts/run.sh configs/full.config -stub-run
 
 # Reference preparation
 
-Reference preparation is performed **once per organism**.
+Reference resources are generated **once per genome assembly**.
 
-The generated resources include
+Typical generated resources include
 
 - STAR genome index
 - SortMeRNA index
 - transcriptome FASTA
 - RSEM reference
 
-These resources are stored under
+During workflow development these resources may be stored inside this repository (for example under `refs/built/`).
 
-```
-refs/built/<species_name>/
-```
+For production analyses, these resources are typically stored on external storage (e.g. `/mnt/d`, `/mnt/f`, shared lab storage, or HPC storage) and referenced through the workflow configuration.
 
-For example
+Once generated, the same references can be reused indefinitely for all datasets using the same genome assembly.
 
-```
-refs/built/
-├── arabidopsis_tair10/
-├── saccharomyces_r64/
-├── chlamydomonas_cc4532/
-├── rice_irgsp1/
-└── human_grch38/
-```
-
-Once generated, these references can be reused indefinitely for every dataset from the same genome assembly.
-
-Only the FASTQ files and samplesheet change between experiments.
+Only the sequencing data and samplesheet change between experiments.
 
 ---
 
 # Processing a new species
 
-When processing a species for the first time:
+When processing a species (or genome assembly) for the first time:
 
-1. Download the genome FASTA.
+1. Download the reference genome (FASTA).
 2. Download the genome annotation (GTF or GFF3).
-3. Ensure the annotation is compatible with RSEM.
-4. Run a small debug dataset (for example 1K reads).
-5. Generate the reference resources.
-6. Store the generated references under
+3. Verify that the annotation is compatible with downstream tools.
+4. Run a small validation dataset (for example 1K reads).
+5. Generate the required reference resources.
+6. Store those resources in a permanent location for future reuse.
 
-```
-refs/built/<species_name>/
-```
+Future analyses should reuse the existing references rather than rebuilding them.
 
-Future analyses for that species should reuse the existing references instead of rebuilding them.
+If a different genome assembly is used (for example TAIR10 vs TAIR11, or GRCh37 vs GRCh38), a separate set of reference resources should be generated.
 
 ---
 
 # Annotation compatibility
 
-Some annotations may not be fully compatible with downstream tools.
+Some genome annotations require preprocessing before they can be used by downstream software.
 
-For example, during development the Araport11 annotation contained records without a `gene_id` attribute, causing RSEM reference generation to fail.
+For example, during development the Araport11 annotation contained records lacking the `gene_id` attribute, causing RSEM reference generation to fail.
 
-The solution was to create a cleaned annotation by removing records lacking `gene_id`.
+The cleaned annotation was generated using
 
 ```bash
 zcat refs/at.gtf.gz \
@@ -183,7 +169,7 @@ zcat refs/at.gtf.gz \
 | gzip > refs/at.rsem.gtf.gz
 ```
 
-This type of preprocessing is only required when the original annotation is incompatible with downstream software.
+This preprocessing was performed solely to satisfy software requirements and does not alter the analytical workflow.
 
 ---
 
@@ -217,9 +203,23 @@ Downstream analyses
 
 ---
 
-# Git policy
+# Data management
 
-The repository contains workflow code only.
+This repository primarily stores
+
+- workflow code
+- configuration files
+- documentation
+
+Large sequencing datasets, intermediate files, generated reference resources, and pipeline outputs are intentionally excluded from version control.
+
+During workflow development, small example datasets may be stored locally for debugging.
+
+Production datasets are expected to reside on dedicated storage (local disks, external drives, or HPC storage), while this repository provides the workflow required to reproduce those analyses.
+
+---
+
+# Git policy
 
 Tracked
 
@@ -231,19 +231,19 @@ Tracked
 
 Ignored
 
-- FASTQ files
+- sequencing data
 - pipeline outputs
 - Nextflow work directory
 - generated reference resources
 - Apptainer images
 
-This keeps the repository lightweight while maintaining complete reproducibility.
+This keeps the repository lightweight while ensuring reproducibility.
 
 ---
 
 # Current example
 
-The current implementation has been validated using
+The workflow has currently been validated using the following example dataset.
 
 | Item | Value |
 |------|------|
@@ -253,4 +253,4 @@ The current implementation has been validated using
 | RNA-seq | SRR25120043 |
 | Pipeline | nf-core/riboseq v1.2.0 |
 
-This dataset serves as an example implementation. The workflow itself is intended to be reusable for any organism with appropriate reference resources.
+This dataset serves only as a validation example. The workflow itself is intended to be reusable for any organism provided that appropriate reference resources have been prepared.
