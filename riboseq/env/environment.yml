@@ -24,3 +24,11 @@ dependencies:
   - git
   - curl
   - wget
+
+  # Optional
+  - ipykernel
+  - jupyter
+  - notebook
+  - numpy
+  - pandas
+  - matplotlib
