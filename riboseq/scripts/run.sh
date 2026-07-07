@@ -17,7 +17,6 @@ nextflow run nf-core/riboseq \
   --gtf "${REF}/at.rsem.gtf" \
   --transcript_fasta "${REF}/genome.transcripts.fa" \
   --star_index "${REF}/index/star" \
-  --sortmerna_index "${REF}/sortmerna" \
   --skip_fastqc \
   --trimmer fastp \
   -work-dir "${WORKDIR}" \

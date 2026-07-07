@@ -1,11 +1,26 @@
 name: nf-ribo
+
 channels:
   - conda-forge
   - bioconda
-  - defaults
+
 dependencies:
+  # Core workflow engine
   - nextflow=25.04.8
+
+  # Java runtime required by Nextflow
+  - openjdk=17
+
+  # nf-core command line utilities
   - nf-core
-  - apptainer
-  - gffread
+
+  # Useful utilities
+  - python
   - tree
+  - pigz
+  - gzip
+
+  # Optional but useful
+  - git
+  - curl
+  - wget
