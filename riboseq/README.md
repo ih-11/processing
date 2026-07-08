@@ -275,3 +275,34 @@ This workflow builds upon the excellent work of
 - The nf-core community
 
 Please cite the original software and the biological datasets used in your analyses where appropriate.
+
+```bash
+watch -n 10 '
+OUT=/mnt/d/Ibnu/riboseq/AT/nfcore/full
+
+echo "========================================="
+echo "      nf-core/riboseq Progress"
+echo "========================================="
+
+check() {
+    if [ -d "$OUT/$2" ]; then
+        printf "✅ %-18s\n" "$1"
+    else
+        printf "⏳ %-18s\n" "$1"
+    fi
+}
+
+check "Reference"        "genome"
+check "Preprocessing"    "preprocessing"
+check "STAR alignment"   "alignment"
+check "Salmon"           "quantification"
+check "Ribo-seq QC"      "riboseq_qc"
+check "RiboWaltz"        "ribowaltz"
+check "RiboTricer"       "ribotricer"
+check "MultiQC"          "multiqc"
+
+echo
+echo "Disk usage:"
+du -sh "$OUT" 2>/dev/null
+'
+```
