@@ -2,11 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG="${1:?Usage: bash scripts/run.sh configs/debug.config}"
+CONFIG="${1:?Usage: bash scripts/run.sh configs/full.config}"
 
 source "${ROOT}/${CONFIG}"
 
-REF="${ROOT}/refs/built/arabidopsis_tair10_rsemclean"
+: "${INPUT:?INPUT is not set}"
+: "${OUTDIR:?OUTDIR is not set}"
+: "${WORKDIR:?WORKDIR is not set}"
+: "${REF:?REF is not set}"
 
 nextflow run nf-core/riboseq \
   -r 1.2.0 \
