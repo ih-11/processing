@@ -1,23 +1,40 @@
 # riboseq
 
-A reusable, reproducible, and configuration-driven workflow for processing **Ribo-seq** and matched **RNA-seq** datasets using the **nf-core/riboseq** pipeline.
+A reusable, reproducible, and configuration-driven workflow for preprocessing **Ribo-seq** and matched **RNA-seq** datasets using the **nf-core/riboseq** pipeline.
 
-Rather than representing a single analysis, this repository provides a reusable framework for running ribosome profiling workflows across multiple organisms, projects, and computing environments. Workflow execution is separated from project-specific configuration, allowing the same analysis pipeline to be reused simply by changing configuration files, reference resources, and sample metadata.
+This repository is designed as a reusable framework rather than a project-specific analysis. It separates reference preparation, pipeline execution, and downstream postprocessing into independent, reproducible components that can be reused across organisms, projects, and computing environments.
 
-The long-term objective of this repository is not only to execute the nf-core/riboseq pipeline, but also to document and understand every computational step so that each stage can be confidently explained, reproduced, and described in the Methods section of a scientific publication.
+The workflow currently consists of three major stages:
+
+1. Reference preparation
+2. Upstream preprocessing with **nf-core/riboseq**
+3. Downstream postprocessing into transcript-level analysis tables
+
+The long-term goal of this repository is not only to execute the nf-core/riboseq pipeline, but also to understand, document, and reproduce every computational step so that the entire workflow can be confidently described in scientific publications.
 
 ---
 
-# Features
+# Workflow overview
 
-- Reusable **nf-core/riboseq** launcher
-- Configuration-driven workflow execution
-- Reusable reference resources
-- Support for multiple species and genome assemblies
-- Local workstation and HPC compatible
-- Version-controlled workflow
-- Comprehensive documentation of pipeline logic
-- Designed for reproducible research
+```text
+Reference resources
+        │
+        ▼
+scripts/build_reference.sh
+        │
+        ▼
+nf-core/riboseq
+        │
+        ▼
+Pipeline outputs
+(MultiQC, BAM, Salmon, ORF prediction, QC)
+        │
+        ▼
+postprocess/
+        │
+        ▼
+Transcript-level master table
+```
 
 ---
 
@@ -25,109 +42,87 @@ The long-term objective of this repository is not only to execute the nf-core/ri
 
 ```text
 riboseq/
-├── benchmark/          # Benchmark configurations and validation logs
-├── configs/            # Run-specific configurations
-├── data/               # Development and benchmark FASTQ files
-├── docs/               # Documentation
-├── env/                # Conda environment
-├── refs/               # Reference genomes and annotations
-├── results/            # Pipeline outputs (git ignored)
-├── samplesheets/       # nf-core samplesheets
-├── scripts/
-│   └── run.sh          # Generic launcher
-└── work/               # Nextflow working directory (git ignored)
+├── configs/          # Example workflow configurations
+├── data/             # Small datasets for workflow validation
+├── docs/             # Additional documentation
+├── env/              # Conda environment
+├── postprocess/      # Downstream analysis notebooks
+├── refs/             # Reference genomes and annotations
+├── samplesheets/     # nf-core sample sheets
+└── scripts/
+    ├── build_reference.sh
+    └── run.sh
 ```
 
 ---
 
-# Design philosophy
+# Repository philosophy
 
-The repository follows three guiding principles.
+The workflow follows four design principles.
 
-## 1. One launcher
+## 1. Configuration-driven execution
 
-The workflow is executed using a single launcher.
+The execution logic never changes.
 
-```bash
-scripts/run.sh
-```
+Only the configuration changes between projects.
 
-Instead of maintaining multiple execution scripts
+Typical configuration variables include
 
-```text
-run_debug.sh
-run_1pct.sh
-run_full.sh
-```
+- INPUT
+- REF
+- OUTDIR
+- WORKDIR
 
-only the configuration changes while the launcher remains identical.
+This allows the same workflow to be reused across different datasets without modifying the execution scripts.
 
 ---
 
-## 2. Configuration-driven execution
+## 2. Reusable reference resources
 
-Each analysis is defined by a configuration file.
+Reference resources are generated once for a genome assembly and reused for all subsequent analyses.
 
-Examples
-
-```text
-configs/debug.config
-configs/1pct.config
-configs/full.config
-```
-
-Different projects therefore require only a new configuration rather than modifications to the workflow.
-
----
-
-## 3. Reusable reference resources
-
-Reference resources are generated once for each genome assembly.
-
-These include, for example,
+Typical generated resources include
 
 - STAR genome index
-- SortMeRNA database
 - Transcriptome FASTA
 - RSEM reference
+- SortMeRNA index
 
-Once generated, these resources can be reused for every dataset using the same genome assembly, substantially reducing preprocessing time while maintaining reproducibility.
+The workflow only requires the configuration file to specify the reference directory.
 
 ---
 
-# Workflow overview
+## 3. Species-independent workflow
 
-```text
-FASTQ
-   │
-   ▼
-FASTP
-   │
-   ▼
-SortMeRNA
-   │
-   ▼
-STAR
-   │
-   ├── Genome alignment
-   └── Transcriptome alignment
-            │
-            ▼
-Salmon
-            │
-            ▼
-Downstream analyses
-    ├── RiboTISH
-    ├── RiboWaltz
-    ├── RiboTricer
-    └── MultiQC
-```
+The repository is not restricted to Arabidopsis.
 
-A detailed explanation of every processing step is provided in
+Any organism can be processed by preparing an appropriate reference directory and updating the configuration file.
 
-```
-docs/01_pipeline.md
-```
+---
+
+## 4. Reproducible downstream processing
+
+The upstream pipeline generates standardized outputs that are subsequently processed using Jupyter notebooks.
+
+Current downstream notebooks include
+
+- Annotation extraction
+- Salmon quantification
+- Translation efficiency calculation
+- BAM inspection
+- RiboWaltz analysis
+- Transcript-level table generation
+
+---
+
+# Requirements
+
+The workflow requires
+
+- Conda
+- Nextflow
+- Java
+- Apptainer (or another supported container runtime)
 
 ---
 
@@ -139,178 +134,144 @@ Create the Conda environment
 conda env create -f env/environment.yml
 ```
 
-Activate
+Activate the environment
 
 ```bash
 conda activate nf-ribo
 ```
 
-The workflow requires
+---
 
-- Nextflow
-- Java
-- Apptainer (or another supported container runtime)
-- nf-core tools
+# Workflow
+
+## Step 1 — Prepare reference resources
+
+Reference resources consist of the original genome files together with reusable indices required by nf-core/riboseq.
+
+See
+
+```
+refs/README.md
+```
+
+for details.
 
 ---
 
-# Running the workflow
+## Step 2 — Prepare a samplesheet
 
-## Debug dataset
+Create an nf-core-compatible samplesheet describing the Ribo-seq and matched RNA-seq libraries.
+
+Example samplesheets are provided in
+
+```
+samplesheets/
+```
+
+---
+
+## Step 3 — Configure the workflow
+
+Copy an example configuration and modify the required variables.
+
+```text
+INPUT
+REF
+OUTDIR
+WORKDIR
+```
+
+The workflow itself does not need to be modified.
+
+---
+
+## Step 4 — Execute nf-core/riboseq
+
+Example
 
 ```bash
-bash scripts/run.sh configs/debug.config
+bash scripts/run.sh configs/full.example.config
 ```
 
-## Validation dataset
+Additional Nextflow options can be supplied directly.
+
+For example
 
 ```bash
-bash scripts/run.sh configs/1pct.config
+bash scripts/run.sh configs/full.example.config -resume
 ```
 
-## Production dataset
+or
 
 ```bash
-bash scripts/run.sh configs/full.config
-```
-
-Additional Nextflow options may be supplied directly.
-
-Examples
-
-```bash
-bash scripts/run.sh configs/full.config -resume
-```
-
-```bash
-bash scripts/run.sh configs/full.config -stub-run
+bash scripts/run.sh configs/full.example.config -stub-run
 ```
 
 ---
 
-# Reference preparation
+## Step 5 — Inspect pipeline outputs
 
-Reference resources are generated once for each genome assembly.
+The nf-core workflow produces, among others,
 
-Typical generated resources include
+- Quality control reports
+- MultiQC summary
+- Genome alignments
+- Transcriptome alignments
+- Salmon quantification
+- ORF prediction
+- RiboWaltz analysis
 
-- STAR genome index
-- SortMeRNA database
-- Transcriptome FASTA
-- RSEM reference
+These outputs serve as the input for downstream analysis.
 
-During development these resources may be stored inside this repository.
+---
 
-For production analyses they are typically stored on external storage or HPC filesystems and referenced by configuration files.
+## Step 6 — Run downstream postprocessing
 
-Reference preparation is described in detail in
+The `postprocess/` notebooks convert the nf-core outputs into standardized transcript-level tables suitable for downstream visualization and analysis.
 
+Current notebooks include
+
+```text
+01_annotation.ipynb
+02_salmon.ipynb
+03_te.ipynb
+04_bam.ipynb
+05_ribowaltz.ipynb
+06_merge.ipynb
 ```
-docs/02_reference_preparation.md
-```
+
+The final output is a transcript-level master table that integrates annotation, quantification, and translation efficiency measurements.
 
 ---
 
-# Processing a new species
+# Validation
 
-Processing a new organism typically involves
-
-1. Downloading the genome FASTA
-2. Downloading the genome annotation
-3. Validating annotation compatibility
-4. Generating reference resources
-5. Running a small benchmark dataset
-6. Running the full dataset
-
-Only the sequencing data and configuration files change between projects.
-
----
-
-# Documentation
-
-Detailed documentation is maintained separately from the repository overview.
-
-| Document | Description |
-|----------|-------------|
-| `docs/01_pipeline.md` | Complete pipeline walkthrough |
-| `docs/02_reference_preparation.md` | Reference generation |
-| `docs/03_arabidopsis_PRJNA990964.md` | Arabidopsis benchmark dataset |
-| `docs/04_benchmark.md` | Validation history |
-| `docs/05_troubleshooting.md` | Development notes and debugging |
-| `docs/06_repository_design.md` | Repository philosophy |
-| `docs/07_future_work.md` | Planned improvements |
-
----
-
-# Data management
-
-Large sequencing datasets, generated references, pipeline outputs, and intermediate files are intentionally excluded from version control.
-
-Typical storage locations include
-
-- local storage
-- external drives
-- laboratory servers
-- HPC project directories
-- HPC scratch space
-
-Only workflow code, documentation, configurations, and reproducibility metadata are tracked by Git.
-
----
-
-# Git policy
-
-Tracked
-
-- scripts
-- configuration files
-- documentation
-- samplesheets
-- environment specification
-
-Ignored
-
-- sequencing data
-- generated references
-- pipeline outputs
-- Nextflow work directories
-- Apptainer cache
-
-This keeps the repository lightweight while maintaining complete reproducibility.
-
----
-
-# Current validation status
-
-Current validation has been performed using
+The workflow has been validated using the following dataset.
 
 | Item | Value |
 |------|------|
 | Species | *Arabidopsis thaliana* |
 | BioProject | PRJNA990964 |
-| Tissue | Shoot |
 | RNA-seq | SRR25120043 |
 | Ribo-seq | SRR25120039 |
 | Pipeline | nf-core/riboseq v1.2.0 |
 
-Additional benchmark information is documented in
-
-```
-docs/04_benchmark.md
-```
+The repository is designed so that the same workflow can be applied to additional organisms by updating the reference resources and configuration.
 
 ---
 
 # License
 
-This repository is released under the MIT License.
+Released under the MIT License.
 
 ---
 
-# Citation
+# Acknowledgements
 
-If this repository contributes to published work, please also cite
+This workflow builds upon the excellent work of
 
 - nf-core/riboseq
 - Nextflow
-- the original biological dataset used in the analysis
+- The nf-core community
+
+Please cite the original software and the biological datasets used in your analyses where appropriate.
